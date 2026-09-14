@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="本地英语音标学习 - 点击音标听发音，查看口型视频与例词，完全离线可用" />
+  <link rel="icon" type="image/png" href="docs/logo.png" />
+  <title>英语音标学习</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>英语音标学习</h1>
+      <p>点击音标听发音 · 查看口型视频与例词</p>
+    </header>
+
+    <main id="categories"></main>
+
+    <footer>
+      <p>© 2026 英语音标学习 · 完全离线可用 · 资源来自 boommanpro/phonetic_symbol_web (MIT)</p>
+    </footer>
+  </div>
+
+  <!-- 底部详情面板 -->
+  <div id="panel-backdrop" class="panel-backdrop">
+    <section class="panel" role="dialog" aria-modal="true" aria-label="音标详情">
+      <div class="panel-header">
+        <button id="panel-close" class="icon-btn" type="button" aria-label="关闭">✕</button>
+        <div class="panel-title">
+          <span id="panel-symbol" class="panel-symbol"></span>
+          <span id="panel-category" class="panel-category"></span>
+        </div>
+        <button id="panel-replay" class="replay-btn" type="button">🔊 重播</button>
+      </div>
+      <video id="panel-video" class="panel-video" controls playsinline preload="metadata"></video>
+      <div class="panel-words-label">例词 · 点击听发音</div>
+      <div id="panel-words" class="word-list"></div>
+    </section>
+  </div>
+
+  <!-- 共享音频播放器（音标读音与例词共用） -->
+  <audio id="player" preload="auto"></audio>
+
+  <script src="data.js"></script>
+  <script>
+    const CATEGORY_ORDER = ['long', 'short', 'diphthong', 'voiceless', 'voiced'];
+    const phoneticById = new Map(PHONETICS.map(p => [p.id, p]));
+
+    const main = document.getElementById('categories');
+    const backdrop = document.getElementById('panel-backdrop');
+    const panelSymbol = document.getElementById('panel-symbol');
+    const panelCategory = document.getElementById('panel-category');
+    const panelVideo = document.getElementById('panel-video');
+    const panelWords = document.getElementById('panel-words');
+    const player = document.getElementById('player');
+
+    let current = null;          // 当前选中的音标对象
+    let pendingWordBtn = null;   // 播放失败时需要置灰的按钮
+
+    /* ---------- 渲染音标网格 ---------- */
+    function buildSections() {
+      for (const cat of CATEGORY_ORDER) {
+        const section = document.createElement('section');
+        section.className = 'category';
+
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+        title.textContent = CATEGORY_LABELS[cat];
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        for (const p of PHONETICS) {
+          if (p.category !== cat) continue;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'phonetic-btn';
+          btn.textContent = p.symbol;
+          btn.dataset.id = p.id;
+          btn.setAttribute('aria-label', `音标 ${p.symbol}`);
+          grid.appendChild(btn);
+        }
+        section.appendChild(grid);
+        main.appendChild(section);
+      }
+    }
+
+    /* ---------- 音频播放 ---------- */
+    function playSound(src) {
+      player.pause();
+      player.currentTime = 0;
+      player.src = src;
+      player.play().catch(err => console.warn('音频播放失败:', src, err));
+    }
+
+    // 音频文件加载失败：置灰对应按钮（资源均已验证存在，仅作防御）
+    player.addEventListener('error', () => {
+      if (pendingWordBtn) pendingWordBtn.classList.add('unavailable');
+      else if (current) {
+        const btn = main.querySelector(`.phonetic-btn[data-id="${current.id}"]`);
+        if (btn) btn.classList.add('unavailable');
+      }
+    });
+
+    /* ---------- 详情面板 ---------- */
+    function openPanel(p) {
+      current = p;
+      panelSymbol.textContent = p.symbol;
+      panelCategory.textContent = CATEGORY_LABELS[p.category];
+
+      // 口型视频：切换音标时重置，不自动播放
+      panelVideo.src = p.video;
+      panelVideo.load();
+
+      // 例词按钮
+      panelWords.innerHTML = '';
+      for (const w of p.words) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'word-btn';
+        btn.textContent = w.word;
+        btn.dataset.audio = w.audio;
+        panelWords.appendChild(btn);
+      }
+
+      backdrop.classList.add('open');
+
+      // 高亮音标按钮
+      main.querySelectorAll('.phonetic-btn.active').forEach(b => b.classList.remove('active'));
+      const activeBtn = main.querySelector(`.phonetic-btn[data-id="${p.id}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      playSound(p.audio);
+    }
+
+    function closePanel() {
+      backdrop.classList.remove('open');
+      main.querySelectorAll('.phonetic-btn.active').forEach(b => b.classList.remove('active'));
+      player.pause();
+      panelVideo.pause();
+      panelVideo.removeAttribute('src');
+      panelVideo.load();
+      current = null;
+    }
+
+    /* ---------- 事件 ---------- */
+    // 点击音标
+    main.addEventListener('click', e => {
+      const btn = e.target.closest('.phonetic-btn');
+      if (!btn || btn.classList.contains('unavailable')) return;
+      const p = phoneticById.get(Number(btn.dataset.id));
+      if (p) openPanel(p);
+    });
+
+    // 点击例词
+    panelWords.addEventListener('click', e => {
+      const btn = e.target.closest('.word-btn');
+      if (!btn || btn.classList.contains('unavailable')) return;
+      panelWords.querySelectorAll('.word-btn.playing').forEach(b => b.classList.remove('playing'));
+      btn.classList.add('playing');
+      pendingWordBtn = btn;
+      playSound(btn.dataset.audio);
+    });
+
+    player.addEventListener('ended', () => {
+      panelWords.querySelectorAll('.word-btn.playing').forEach(b => b.classList.remove('playing'));
+      pendingWordBtn = null;
+    });
+
+    // 重播当前音标读音
+    document.getElementById('panel-replay').addEventListener('click', () => {
+      if (current) {
+        panelWords.querySelectorAll('.word-btn.playing').forEach(b => b.classList.remove('playing'));
+        playSound(current.audio);
+      }
+    });
+
+    // 关闭面板
+    document.getElementById('panel-close').addEventListener('click', closePanel);
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) closePanel();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && backdrop.classList.contains('open')) closePanel();
+    });
+
+    buildSections();
+  </script>
+</body>
+</html>

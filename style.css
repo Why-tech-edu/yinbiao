@@ -1,0 +1,306 @@
+/* ============================================================
+   英语音标学习 - 本地版样式（完全离线，无外部依赖）
+   移动优先设计，主色沿用参考项目 #4361ee
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --primary: #4361ee;
+  --primary-dark: #3f37c9;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #212529;
+  --text-light: #6b7280;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+/* ---------- 头部 ---------- */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+header p {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+/* ---------- 分类区块 ---------- */
+.category {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 20px 16px;
+  margin-bottom: 24px;
+}
+
+.category-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+/* 音标网格：手机 3 列，平板/桌面 5 列 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* ---------- 音标按钮 ---------- */
+.phonetic-btn {
+  background: var(--card);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 4px;
+  min-height: 48px;
+  font-size: 1.2rem;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.25s ease;
+}
+
+.phonetic-btn:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.phonetic-btn:active {
+  transform: translateY(0);
+}
+
+.phonetic-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 8px 16px rgba(67, 97, 238, 0.35);
+}
+
+.phonetic-btn.unavailable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- 底部详情面板 ---------- */
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.panel-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.panel {
+  width: 100%;
+  max-width: 640px;
+  background: var(--card);
+  border-radius: 16px 16px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 78vh;
+  max-height: 78dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.28s ease;
+}
+
+.panel-backdrop.open .panel {
+  transform: translateY(0);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-symbol {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.panel-category {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: #f1f3f9;
+  color: #4b5563;
+  font-size: 1rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s;
+}
+
+.icon-btn:hover {
+  background: #e2e6f4;
+}
+
+.replay-btn {
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  padding: 9px 16px;
+  min-height: 40px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s;
+}
+
+.replay-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* 口型视频 */
+.panel-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+/* 例词 */
+.panel-words-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 10px;
+}
+
+.word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.word-btn {
+  padding: 8px 16px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.word-btn:hover {
+  background: #eef2ff;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.word-btn.playing {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.word-btn.unavailable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- 页脚 ---------- */
+footer {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+/* 桌面端面板更靠中，带圆角阴影 */
+@media (min-width: 640px) {
+  .panel-backdrop {
+    align-items: center;
+  }
+  .panel {
+    border-radius: 16px;
+    max-height: 85vh;
+    max-height: 85dvh;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    transform: translateY(24px);
+  }
+  .panel-backdrop.open .panel {
+    transform: translateY(0);
+  }
+}
